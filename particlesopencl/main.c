@@ -6,9 +6,9 @@
 #include "ocl.h"
 
 #define NUM_PARTICLES 65536
-#define NUM_STEPS     100
-#define DT            0.016f
-#define GRAVITY       -9.81f
+#define NUM_STEPS 100
+#define DT 0.016f
+#define GRAVITY -9.81f
 
 typedef struct {
     float x, y, z;
@@ -44,9 +44,9 @@ static double run_cpu(Particle *p, int count) {
     for (int s = 0; s < NUM_STEPS; s++) {
         for (int i = 0; i < count; i++) {
             p[i].vy += GRAVITY * DT;
-            p[i].x  += p[i].vx * DT;
-            p[i].y  += p[i].vy * DT;
-            p[i].z  += p[i].vz * DT;
+            p[i].x += p[i].vx * DT;
+            p[i].y += p[i].vy * DT;
+            p[i].z += p[i].vz * DT;
         }
     }
     clock_t end = clock();
@@ -104,7 +104,7 @@ int main(void) {
 
     print_header(device);
 
-    /* ---- CPU run ---- */
+    /*  CPU run  */
     Particle *cpu_p = malloc(buf_sz);
     srand(0);
     init_particles(cpu_p, NUM_PARTICLES);
@@ -114,7 +114,7 @@ int main(void) {
     printf("CPU time      : %.4f sec\n", cpu_time);
     printf("Particles/sec : %.0f\n", (NUM_PARTICLES * NUM_STEPS) / cpu_time);
 
-    /* ---- GPU run (OpenCL) ---- */
+    /*  GPU run (OpenCL)  */
     Particle *gpu_p = malloc(buf_sz);
     srand(0);
     init_particles(gpu_p, NUM_PARTICLES);
@@ -129,8 +129,7 @@ int main(void) {
     cl.BuildProgram(prog, 1, &device, NULL, NULL, NULL);
 
     cl_kernel kernel = cl.CreateKernel(prog, "simulate", &err);
-    cl_mem d_particles = cl.CreateBuffer(ctx, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
-                                          buf_sz, gpu_p, &err);
+    cl_mem d_particles = cl.CreateBuffer(ctx, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, buf_sz, gpu_p, &err);
 
     unsigned int count = NUM_PARTICLES;
     float dt = DT, gravity = GRAVITY;
@@ -154,7 +153,7 @@ int main(void) {
     printf("GPU time      : %.4f sec\n", gpu_time);
     printf("Particles/sec : %.0f\n", (NUM_PARTICLES * NUM_STEPS) / gpu_time);
 
-    /* ---- Comparison ---- */
+    /*  Comparison  */
     printf("\n=== Comparison ===\n");
     printf("%-18s %12s %16s\n", "", "CPU", "GPU (OpenCL)");
     printf("%-18s %12.4fs %12.4fs\n", "Time:", cpu_time, gpu_time);
@@ -166,18 +165,13 @@ int main(void) {
     for (int i = 0; i < NUM_PARTICLES; i++) {
         if (fabsf(cpu_p[i].x - gpu_p[i].x) > 0.001f ||
             fabsf(cpu_p[i].y - gpu_p[i].y) > 0.001f ||
-            fabsf(cpu_p[i].z - gpu_p[i].z) > 0.001f) {
-            mismatches++;
-        }
+            fabsf(cpu_p[i].z - gpu_p[i].z) > 0.001f) { mismatches++; }
     }
     printf("%-18s %s\n", "Results match:", mismatches == 0 ? "YES" : "NO");
     if (mismatches > 0) printf("  mismatches: %d / %d\n", mismatches, NUM_PARTICLES);
 
     printf("\n--- Sample (GPU) ---\n");
-    for (int i = 0; i < 4; i++)
-        printf("  p[%d] pos=(%7.2f, %7.2f, %7.2f) vel=(%7.2f, %7.2f, %7.2f)\n",
-               i, gpu_p[i].x, gpu_p[i].y, gpu_p[i].z,
-               gpu_p[i].vx, gpu_p[i].vy, gpu_p[i].vz);
+    for (int i = 0; i < 4; i++) { printf("  p[%d] pos=(%7.2f, %7.2f, %7.2f) vel=(%7.2f, %7.2f, %7.2f)\n", i, gpu_p[i].x, gpu_p[i].y, gpu_p[i].z, gpu_p[i].vx, gpu_p[i].vy, gpu_p[i].vz); }
 
     free(cpu_p);
     free(gpu_p);
